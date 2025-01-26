@@ -17,11 +17,12 @@ jobs:
         dotnet-version: 8.0.x
     - name: Get latest tag version
       id: vars
-      run: echo "tag=`echo $(git describe --tags --abbrev=0)`" >> $GITHUB_OUTPUT
+      run: echo "tag=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
     - name: Package
-      env:
-        RELEASE_VERSION: ${{ steps.vars.outputs.tag }}
-      run: |
-        echo $RELEASE_VERSION
-        dotnet pack -p:PackageVersion=$RELEASE_VERSION
-        dotnet nuget push DotPrompt.Sql/nupkg/*.nupkg -k ${{ secrets.AZURECODER_NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
+  env:
+    RELEASE_VERSION: ${{ env.tag }}
+  run: |
+    echo "Release version: $RELEASE_VERSION"
+    dotnet pack -p:PackageVersion=$RELEASE_VERSION
+    dotnet nuget push DotPrompt.Sql/nupkg/*.nupkg -k ${{ secrets.AZURECODER_NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
+
