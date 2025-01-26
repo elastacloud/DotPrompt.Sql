@@ -6,16 +6,6 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PackageId>DotPrompt.Sql</PackageId>
-        <Version>0.1.1</Version>
-        <Authors>Elastacloud</Authors>
-        <Description>A SQL Store library for DotPrompt</Description>
-        <PackageReadmeFile>readme.md</PackageReadmeFile>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <RepositoryUrl>https://github.com/elastacloud/DotPrompt.Sql</RepositoryUrl>
-    </PropertyGroup>
-
     <ItemGroup>
         <None Include="../readme.md" Pack="true" PackagePath="readme.md" />
     </ItemGroup>

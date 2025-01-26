@@ -7,24 +7,6 @@
         <Nullable>enable</Nullable>
     </PropertyGroup>
 
-    <PropertyGroup>
-        <PackageId>DotPrompt.Sql</PackageId>
-        <Version>0.1.1</Version>
-        <Authors>Elastacloud</Authors>
-        <Description>A SQL Store library for DotPrompt</Description>
-        <PackageReadmeFile>readme.md</PackageReadmeFile>
-        <PackageLicenseExpression>MIT</PackageLicenseExpression>
-        <RepositoryUrl>https://github.com/elastacloud/DotPrompt.Sql</RepositoryUrl>
-    </PropertyGroup>
-
-    <ItemGroup>
-        <None Include="../readme.md" Pack="true" PackagePath="readme.md" />
-    </ItemGroup>
-
-    <ItemGroup>
-      <ProjectReference Include="..\DotPrompt.Sql\DotPrompt.Sql.csproj" />
-    </ItemGroup>
-
     <ItemGroup>
       <None Update="prompts\basic.prompt">
         <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -32,6 +14,15 @@
       <None Update="sample1.yaml">
         <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       </None>
+    </ItemGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\DotPrompt.Sql\DotPrompt.Sql.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+        <PackageReference Include="DotPrompt" Version="0.0.4.1" />
+        <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
     </ItemGroup>
 
 </Project>
