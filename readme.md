@@ -41,6 +41,6 @@ It will automatically create the tables with a unique constraint on PromptName w
 
 The above is right as per v0.1 and I'll update until I get to a stable build which covers all of the features from DotPrompt.
 
-You can review DotPrompt here.
+You can review DotPrompt [here](https://github.com/elastacloud/dotprompt).
 
 
