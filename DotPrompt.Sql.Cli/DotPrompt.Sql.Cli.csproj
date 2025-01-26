@@ -9,6 +9,7 @@
         <Description>A SQL store for DotPrompt allowing you to store prompt files in a relational form</Description>
         <Authors>Richard Conway</Authors>
         <Version>0.1.1</Version>
+        <PackageVersion>0.1.1</PackageVersion>
         <Company>Elastacloud</Company>
         <PackageProjectUrl>https://elastacloud.com</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elastacloud/DotPrompt.Sql</RepositoryUrl>
