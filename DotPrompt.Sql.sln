@@ -1,0 +1,22 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotPrompt.Sql", "DotPrompt.Sql\DotPrompt.Sql.csproj", "{FC6D8432-B31E-41E0-AFFC-9AECC2D3976E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotPrompt.Sql.Cli", "DotPrompt.Sql.Cli\DotPrompt.Sql.Cli.csproj", "{B30D544E-94DF-443B-B281-9D0D39A8554F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{FC6D8432-B31E-41E0-AFFC-9AECC2D3976E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FC6D8432-B31E-41E0-AFFC-9AECC2D3976E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FC6D8432-B31E-41E0-AFFC-9AECC2D3976E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FC6D8432-B31E-41E0-AFFC-9AECC2D3976E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

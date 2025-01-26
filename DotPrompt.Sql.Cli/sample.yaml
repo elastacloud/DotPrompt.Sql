@@ -1,0 +1,6 @@
+server: "myserver.database.windows.net"
+database: "mydatabase"
+username: "myuser"
+password: "mypassword"
+integrated_authentication: false
+aad_authentication: true
