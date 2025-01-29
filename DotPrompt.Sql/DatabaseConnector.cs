@@ -1,11 +1,22 @@
+using System.Data;
+using Microsoft.Data.SqlClient;
+
 namespace DotPrompt.Sql;
 
 using System;
 using System.Data.SqlClient;
-
+/// <summary>
+/// Used tp connection to the database and open a connection
+/// </summary>
 public class DatabaseConnector
 {
-    public async Task<SqlConnection> ConnectToDatabase(DatabaseConfig config)
+    /// <summary>
+    /// Provides a database connection and opens the connection - creates all tables if they don't exist
+    /// </summary>
+    /// <param name="config">The config from the yaml file to help with the database connection</param>
+    /// <returns>An open connection</returns>
+    /// <exception cref="ApplicationException">Raised when the connection cannot be opened</exception>
+    public async Task<IDbConnection> ConnectToDatabase(DatabaseConfig config)
     {
         string connectionString = BuildConnectionString(config);
 
@@ -26,64 +37,14 @@ public class DatabaseConnector
     private async Task CreatePromptTables(SqlConnection connection)
     {
         // 1. Does the prompt table exist already
-        bool tableExists = false;
-        string queryPromptFileExists = @"
-            SELECT COUNT(*)
-            FROM INFORMATION_SCHEMA.TABLES 
-            WHERE TABLE_NAME = 'PromptFile'";
-        await using (SqlCommand command = new SqlCommand(queryPromptFileExists, connection))
-        {
-            tableExists = (int) (await command.ExecuteScalarAsync() ?? 0) > 0;
-        }
-
-        if (!tableExists)
-        {
-            string sqlCreate = @"
-            CREATE TABLE PromptFile (
-                PromptId INT IDENTITY(1,1) PRIMARY KEY,
-                PromptName VARCHAR(255) NOT NULL UNIQUE,
-                CreatedAt DATETIMEOFFSET NULL,
-                ModifiedAt DATETIMEOFFSET NULL,
-                Model VARCHAR(255) NULL,
-                OutputFormat VARCHAR(255) NOT NULL DEFAULT '',
-                MaxTokens INT NOT NULL,
-                SystemPrompt NVARCHAR(MAX) NOT NULL DEFAULT '',
-                UserPrompt NVARCHAR(MAX) NOT NULL DEFAULT ''
-            );
-
-            -- Create the PromptParameters table
-            CREATE TABLE PromptParameters (
-                ParameterId INT IDENTITY(1,1) PRIMARY KEY,
-                PromptId INT NOT NULL,
-                ParameterName VARCHAR(255) NOT NULL,
-                ParameterValue VARCHAR(255) NOT NULL,
-                CONSTRAINT FK_Parameters_PromptFile FOREIGN KEY (PromptId)
-                    REFERENCES PromptFile(PromptId) ON DELETE CASCADE
-            );
-
-            -- Create the ParameterDefaults table
-            CREATE TABLE ParameterDefaults (
-                DefaultId INT IDENTITY(1,1) PRIMARY KEY,
-                ParameterId INT NOT NULL,
-                DefaultValue VARCHAR(255) NOT NULL,
-                Description NVARCHAR(500) NULL,
-                CONSTRAINT FK_ParameterDefaults_PromptParameters FOREIGN KEY (ParameterId)
-                    REFERENCES PromptParameters(ParameterId) ON DELETE CASCADE
-            );
-
-            -- Additional Indexes (if needed for better performance)
-            CREATE INDEX IX_PromptParameters_PromptId ON PromptParameters(PromptId);
-            CREATE INDEX IX_ParameterDefaults_ParameterId ON ParameterDefaults(ParameterId);
-            ";
-                
-            await using SqlCommand command = new SqlCommand(sqlCreate, connection);
-            await command.ExecuteNonQueryAsync();
-        }
+        string? sqlCreate = DatabaseConfigReader.LoadQuery("CreateDefaultPromptTables.sql");
+        await using SqlCommand command = new SqlCommand(sqlCreate, connection);
+        await command.ExecuteNonQueryAsync();
     }
     
     private static string BuildConnectionString(DatabaseConfig config)
     {
-        if (config.AADAuthentication)
+        if (config.AadAuthentication)
         {
             return $"Server={config.Server};Database={config.Database};Authentication=Active Directory Default;";
         }
