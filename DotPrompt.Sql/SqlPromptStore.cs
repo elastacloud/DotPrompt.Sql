@@ -1,3 +1,4 @@
+using System.Data;
 using System.Data.SqlClient;
 
 namespace DotPrompt.Sql;
@@ -17,13 +18,13 @@ public class SqlTablePromptStore(string promptFile) : IPromptStore
         var sqlConnection = GetSqlClient(_promptFile).Result;
         var loader = new SqlPromptLoader(sqlConnection);
         var sqlPromptEntities = loader.Load();
-        return sqlPromptEntities.Select(entity => entity.ToPromptFile());
+        return sqlPromptEntities.Select(entity => entity.ToPromptFile())!;
     }
 
     /// <summary>
-    /// Gets a SQL connection
+    /// Gets a SQL connection given appropriate connection config
     /// </summary>
-    private static async Task<SqlConnection> GetSqlClient(string yamlFilePath)
+    private static async Task<IDbConnection> GetSqlClient(string yamlFilePath)
     {
         var config = DatabaseConfigReader.ReadYamlConfig(yamlFilePath);
         var connector = new DatabaseConnector();

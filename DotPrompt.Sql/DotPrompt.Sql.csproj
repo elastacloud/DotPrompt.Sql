@@ -26,9 +26,23 @@
     </ItemGroup>
     
     <ItemGroup>
+      <PackageReference Include="Dapper" Version="2.1.35" />
       <PackageReference Include="DotPrompt" Version="0.0.4.1" />
-      <PackageReference Include="System.Data.SqlClient" Version="4.9.0" />
+      <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
       <PackageReference Include="YamlDotNet" Version="16.3.0" />
+    </ItemGroup>
+    
+    <ItemGroup>
+      <None Remove="Resources\SqlQueries\LoadPrompts.sql" />
+      <EmbeddedResource Include="Resources\SqlQueries\LoadPrompts.sql" />
+      <None Remove="Resources\SqlQueries\InsertPromptFile.sql" />
+      <EmbeddedResource Include="Resources\SqlQueries\InsertPromptFile.sql" />
+      <None Remove="Resources\SqlQueries\InsertPromptParameters.sql" />
+      <EmbeddedResource Include="Resources\SqlQueries\InsertPromptParameters.sql" />
+      <None Remove="Resources\SqlQueries\InsertPromptDefaults.sql" />
+      <EmbeddedResource Include="Resources\SqlQueries\InsertPromptDefaults.sql" />
+      <None Remove="Resources\SqlQueries\CreateDefaultPromptTables.sql" />
+      <EmbeddedResource Include="Resources\SqlQueries\CreateDefaultPromptTables.sql" />
     </ItemGroup>
 
 </Project>

@@ -1,156 +1,138 @@
+using System.Data;
+using Dapper;
+
 namespace DotPrompt.Sql;
 
 using System;
 using System.Collections.Generic;
-using System.Data.SqlClient;
+using DotPrompt.Sql.Types;
 
-public class SqlPromptLoader(SqlConnection connection)
+/// <summary>
+/// A class which defines CRUD operations for a SqlEntityPrompt
+/// </summary>
+/// <param name="connection">An Open IDBConnection for a SQL database</param>
+public class SqlPromptLoader(IDbConnection connection)
 {
-    private readonly SqlConnection _connection = connection;
+    private readonly IDbConnection _connection = connection;
 
-    public async Task AddSqlPrompt(SqlPromptEntity entity)
+    /// <summary>
+    /// Adds a single SqlPromptEntity to the database
+    /// </summary>
+    /// <param name="entity">The configured SqlEntityPrompt instance</param>
+    /// <exception cref="ApplicationException">An exception if there is a database connection or issue with a conflict</exception>
+    public async Task AddSqlPrompt(SqlPromptEntity? entity)
     {
-        await using SqlTransaction transaction = _connection.BeginTransaction();
+        using var transaction = _connection.BeginTransaction();
         try
         {
             // Insert into PromptFile table and get the PromptId
-            string insertPromptFileQuery = @"
-                        INSERT INTO PromptFile (PromptName, CreatedAt, ModifiedAt, Model, OutputFormat, MaxTokens, SystemPrompt, UserPrompt)
-                        OUTPUT INSERTED.PromptId
-                        VALUES (@PromptName, @CreatedAt, @ModifiedAt, @Model, @OutputFormat, @MaxTokens, @SystemPrompt, @UserPrompt)";
+            string? insertPromptFileQuery = DatabaseConfigReader.LoadQuery("InsertPromptFile.sql");
 
-            int promptId;
-            await using (SqlCommand cmd = new SqlCommand(insertPromptFileQuery, connection, transaction))
+            if (insertPromptFileQuery != null)
             {
-                cmd.Parameters.AddWithValue("@PromptName", entity.PromptName);
-                cmd.Parameters.AddWithValue("@CreatedAt", DateTimeOffset.UtcNow);
-                cmd.Parameters.AddWithValue("@ModifiedAt", DateTimeOffset.UtcNow);
-                cmd.Parameters.AddWithValue("@Model", entity.Model ?? (object)DBNull.Value);
-                cmd.Parameters.AddWithValue("@OutputFormat", entity.OutputFormat);
-                cmd.Parameters.AddWithValue("@MaxTokens", entity.MaxTokens);
-                cmd.Parameters.AddWithValue("@SystemPrompt", entity.SystemPrompt);
-                cmd.Parameters.AddWithValue("@UserPrompt", entity.UserPrompt);
-
-                promptId = (int)await cmd.ExecuteScalarAsync();
-            }
-
-            // Insert parameters into PromptParameters table
-            foreach (var param in entity.Parameters)
-            {
-                string insertParametersQuery = @"
-                            INSERT INTO PromptParameters (PromptId, ParameterName, ParameterValue)
-                            OUTPUT INSERTED.ParameterId
-                            VALUES (@PromptId, @ParameterName, @ParameterValue)";
-
-                int parameterId;
-                await using (SqlCommand cmd = new SqlCommand(insertParametersQuery, connection, transaction))
-                {
-                    cmd.Parameters.AddWithValue("@PromptId", promptId);
-                    cmd.Parameters.AddWithValue("@ParameterName", param.Key);
-                    cmd.Parameters.AddWithValue("@ParameterValue", param.Value);
-
-                    parameterId = (int)await cmd.ExecuteScalarAsync();
-
-                    // Insert corresponding default values into ParameterDefaults table
-                    if (!entity.Default.TryGetValue(param.Key, out var defaultValue)) continue;
-                    string insertDefaultsQuery = @"
-                                    INSERT INTO ParameterDefaults (ParameterId, DefaultValue)
-                                    VALUES (@ParameterId, @DefaultValue)";
-
-                    await using (SqlCommand defaultCmd = new SqlCommand(insertDefaultsQuery, connection, transaction))
+                var promptId = await _connection.ExecuteScalarAsync<int>(
+                    insertPromptFileQuery, 
+                    new
                     {
-                        defaultCmd.Parameters.AddWithValue("@ParameterId", parameterId);
-                        defaultCmd.Parameters.AddWithValue("@DefaultValue",
-                            defaultValue?.ToString() ?? (object)DBNull.Value);
-                        await defaultCmd.ExecuteNonQueryAsync();
+                        entity.PromptName,
+                        CreatedAt = DateTimeOffset.UtcNow,
+                        ModifiedAt = DateTimeOffset.UtcNow,
+                        Model = entity.Model ?? (object)DBNull.Value,
+                        entity.OutputFormat,
+                        entity.MaxTokens,
+                        entity.SystemPrompt,
+                        entity.UserPrompt
+                    },
+                    transaction
+                );
+
+                // Insert parameters into PromptParameters table
+                if (entity.Parameters != null)
+                    foreach (var param in entity.Parameters)
+                    {
+                        string? insertParametersQuery = DatabaseConfigReader.LoadQuery("InsertPromptParameters.sql");
+
+                        if (insertParametersQuery == null) continue;
+                        var parameterId = await _connection.ExecuteScalarAsync<int>(
+                            insertParametersQuery,
+                            new
+                            {
+                                PromptId = promptId,
+                                ParameterName = param.Key,
+                                ParameterValue = param.Value
+                            },
+                            transaction
+                        );
+
+                        // Insert corresponding default values into ParameterDefaults table
+                        object? defaultValue = null;
+                        if (entity.Default != null && !entity.Default.TryGetValue(param.Key, out defaultValue))
+                            continue;
+                        string? insertDefaultsQuery = DatabaseConfigReader.LoadQuery("InsertPromptDefaults.sql");
+
+                        if (insertDefaultsQuery != null)
+                            await _connection.ExecuteAsync(
+                                insertDefaultsQuery,
+                                new
+                                {
+                                    ParameterId = parameterId,
+                                    DefaultValue = defaultValue ?? (object)DBNull.Value
+                                },
+                                transaction
+                            );
                     }
-                }
             }
 
-            await transaction.CommitAsync();
+            transaction.Commit();
         }
         catch (Exception ex)
         {
-            await transaction.RollbackAsync();
-            throw new ApplicationException($"Error inserting data: {ex.Message}");
+            transaction.Rollback();
+            throw new ApplicationException($"Error inserting data: {ex.Message}", ex);
         }
     }
 
+    /// <summary>
+    /// Loads a set of SQL prompts from the database
+    /// </summary>
+    /// <returns>A collection of SqlPromptEntity which can be converted back and forth into a prompt file</returns>
     public IEnumerable<SqlPromptEntity> Load()
     {
-        var prompts = new List<SqlPromptEntity>();
+        string? query = DatabaseConfigReader.LoadQuery("LoadPrompts.sql");
 
-        string query = @"
-        SELECT 
-            pf.PromptId, 
-            pf.PromptName, 
-            pf.CreatedAt, 
-            pf.ModifiedAt, 
-            pf.Model, 
-            pf.OutputFormat, 
-            pf.MaxTokens, 
-            pf.SystemPrompt, 
-            pf.UserPrompt,
-            pp.ParameterName, 
-            pp.ParameterValue,
-            pd.DefaultValue
-        FROM PromptFile pf
-        LEFT JOIN PromptParameters pp ON pf.PromptId = pp.PromptId
-        LEFT JOIN ParameterDefaults pd ON pp.ParameterId = pd.ParameterId
-        ORDER BY pf.PromptId";
+        var promptDictionary = new Dictionary<int, SqlPromptEntity>();
 
-        using SqlCommand command = new SqlCommand(query, connection);
-        using SqlDataReader reader = command.ExecuteReader();
-        var promptLookup = new Dictionary<int, SqlPromptEntity>();
-
-        while (reader.Read())
+        if (query != null)
         {
-            int promptId = reader.GetInt32(reader.GetOrdinal("PromptId"));
-
-            if (!promptLookup.TryGetValue(promptId, out var promptEntity))
-            {
-                promptEntity = new SqlPromptEntity
+            var result = _connection.Query<SqlPromptEntity, PromptParameter, SqlPromptEntity>(
+                query,
+                (prompt, param) =>
                 {
-                    PromptId = promptId,
-                    PromptName = reader.GetString(reader.GetOrdinal("PromptName")),
-                    CreatedAt = reader.IsDBNull(reader.GetOrdinal("CreatedAt"))
-                        ? null
-                        : reader.GetDateTimeOffset(reader.GetOrdinal("CreatedAt")),
-                    ModifiedAt = reader.IsDBNull(reader.GetOrdinal("ModifiedAt"))
-                        ? null
-                        : reader.GetDateTimeOffset(reader.GetOrdinal("ModifiedAt")),
-                    Model = reader.IsDBNull(reader.GetOrdinal("Model"))
-                        ? null
-                        : reader.GetString(reader.GetOrdinal("Model")),
-                    OutputFormat = reader.GetString(reader.GetOrdinal("OutputFormat")),
-                    MaxTokens = reader.GetInt32(reader.GetOrdinal("MaxTokens")),
-                    SystemPrompt = reader.GetString(reader.GetOrdinal("SystemPrompt")),
-                    UserPrompt = reader.GetString(reader.GetOrdinal("UserPrompt")),
-                    Parameters = new Dictionary<string, string>(),
-                    Default = new Dictionary<string, object>()
-                };
+                    if (!promptDictionary.TryGetValue(prompt.PromptId, out var promptEntity))
+                    {
+                        promptEntity = prompt;
+                        promptEntity.Parameters = new Dictionary<string, string>();
+                        promptEntity.Default = new Dictionary<string, object>();
+                        promptDictionary.Add(prompt.PromptId, promptEntity);
+                    }
 
-                promptLookup[promptId] = promptEntity;
-                prompts.Add(promptEntity);
-            }
+                    if (string.IsNullOrEmpty(param.ParameterName)) return promptEntity;
+                    if (promptEntity.Parameters != null && !promptEntity.Parameters.ContainsKey(param.ParameterName))
+                    {
+                        promptEntity.Parameters.Add(param.ParameterName, param.ParameterValue);
+                    }
 
-            // Add parameters if they exist
-            if (reader.IsDBNull(reader.GetOrdinal("ParameterName")) ||
-                reader.IsDBNull(reader.GetOrdinal("ParameterValue"))) continue;
-            string paramName = reader.GetString(reader.GetOrdinal("ParameterName"));
-            string paramValue = reader.GetString(reader.GetOrdinal("ParameterValue"));
-            if (!promptEntity.Parameters.ContainsKey(paramName))
-            {
-                promptEntity.Parameters.Add(paramName, paramValue);
-            }
-            object defaultValue = reader.GetValue(reader.GetOrdinal("DefaultValue"));
-            if (!promptEntity.Default.ContainsKey(paramName))
-            {
-                promptEntity.Default.Add(paramName, defaultValue);
-            }
+                    if (promptEntity.Default == null || promptEntity.Default.ContainsKey(param.ParameterName))
+                        return promptEntity;
+                    if (param.DefaultValue != null)
+                        promptEntity.Default.Add(param.ParameterName, param.DefaultValue);
 
+                    return promptEntity;
+                },
+                splitOn: "ParameterId"
+            );
         }
 
-        return prompts;
+        return promptDictionary.Values;
     }
 }

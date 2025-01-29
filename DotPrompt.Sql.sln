@@ -4,6 +4,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotPrompt.Sql", "DotPrompt.
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotPrompt.Sql.Cli", "DotPrompt.Sql.Cli\DotPrompt.Sql.Cli.csproj", "{B30D544E-94DF-443B-B281-9D0D39A8554F}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DotPrompt.Sql.Test", "DotPrompt.Sql.Test\DotPrompt.Sql.Test.csproj", "{6E7C92E2-6F0B-49D4-A48E-33774980EB01}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -18,5 +20,9 @@ Global
 		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{B30D544E-94DF-443B-B281-9D0D39A8554F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6E7C92E2-6F0B-49D4-A48E-33774980EB01}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6E7C92E2-6F0B-49D4-A48E-33774980EB01}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6E7C92E2-6F0B-49D4-A48E-33774980EB01}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6E7C92E2-6F0B-49D4-A48E-33774980EB01}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

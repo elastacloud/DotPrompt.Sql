@@ -1,8 +1,8 @@
 ﻿// See https://aka.ms/new-console-template for more information
-
+namespace DotPrompt.Sql.Cli;
 using DotPrompt.Sql;
 
-class Program
+internal class Program
 {
     public static async Task Main(string[] args)
     {
