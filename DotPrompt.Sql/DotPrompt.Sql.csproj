@@ -43,6 +43,8 @@
       <EmbeddedResource Include="Resources\SqlQueries\InsertPromptDefaults.sql" />
       <None Remove="Resources\SqlQueries\CreateDefaultPromptTables.sql" />
       <EmbeddedResource Include="Resources\SqlQueries\CreateDefaultPromptTables.sql" />
+      <None Remove="Resources\SqlQueries\AddSqlPrompt.sql" />
+      <EmbeddedResource Include="Resources\SqlQueries\AddSqlPrompt.sql" />
     </ItemGroup>
 
 </Project>

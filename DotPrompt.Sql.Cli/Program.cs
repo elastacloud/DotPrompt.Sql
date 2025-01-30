@@ -12,8 +12,10 @@ internal class Program
         var config = DatabaseConfigReader.ReadYamlConfig(args[1]);
         var connector = new DatabaseConnector();
         var connection = await connector.ConnectToDatabase(config);
-        var loader = new SqlPromptLoader(connection);
-        await loader.AddSqlPrompt(entity);
+        IPromptRepository sqlRepository = new SqlPromptRepository(connection); 
+        var loader = new SqlPromptLoader(sqlRepository);
+        bool upVersioned = await loader.AddSqlPrompt(entity);
+        Console.WriteLine($"Done: {upVersioned}");
 
         var prompts = loader.Load();
         foreach (var prompt in prompts)
