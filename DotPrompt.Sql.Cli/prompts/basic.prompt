@@ -1,6 +1,6 @@
 model: claude-3-5-sonnet-latest
 config:
-  name: basic1
+  name: basic
   outputFormat: text
   temperature: 0.9
   maxTokens: 500
