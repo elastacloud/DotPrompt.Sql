@@ -23,6 +23,6 @@ jobs:
         RELEASE_VERSION: ${{ env.tag }}
       run: |
         echo "Release version: $RELEASE_VERSION"
-        dotnet pack -p:PackageVersion=0.1.1
+        dotnet pack -p:PackageVersion=0.2.1
         dotnet nuget push DotPrompt.Sql/nupkg/*.nupkg -k ${{ secrets.AZURECODER_NUGET_API_KEY }} -s https://api.nuget.org/v3/index.json --skip-duplicate
 
