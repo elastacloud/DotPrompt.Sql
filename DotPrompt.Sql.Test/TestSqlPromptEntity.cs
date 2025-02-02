@@ -1,121 +1,172 @@
-namespace DotPrompt.Sql.Test;
-
 using System;
 using System.Collections.Generic;
-using System.IO;
+using System.Data;
+using System.Data.SQLite;
+using System.Reflection;
+using Microsoft.Data.Sqlite;
+using System.Threading.Tasks;
+using Dapper;
+using DotPrompt.Sql;
+using Microsoft.Data.SqlClient;
+using Testcontainers.MsSql;
 using Xunit;
 
-public class SqlPromptEntityTests : IDisposable
+public class SqlPromptRepositoryTests : IAsyncLifetime
 {
-    private readonly List<string> _testFiles = new();
+    private readonly MsSqlContainer _sqlServerContainer;
+    private IDbConnection _connection;
+    private SqlPromptRepository _repository;
 
-    // Helper method to create and track test YAML files
-    private void CreateTestYamlFile(string filePath, string content)
+    public SqlPromptRepositoryTests()
     {
-        File.WriteAllText(filePath, content);
-        _testFiles.Add(filePath); // Track the file for later cleanup
+        _sqlServerContainer = new MsSqlBuilder()
+            .WithImage("mcr.microsoft.com/mssql/server:2022-latest")
+            .WithPassword("YourStrong(!)Password")
+            .Build();
+    }
+
+    public async Task InitializeAsync()
+    {
+        await _sqlServerContainer.StartAsync();
+
+        _connection = new SqlConnection(_sqlServerContainer.GetConnectionString());
+        _connection.Open();
+
+        _repository = new SqlPromptRepository(_connection);
+        await InitializeDatabase();
+    }
+
+    public Task DisposeAsync()
+    {
+        _sqlServerContainer.StopAsync();
+        _connection?.Dispose();
+        return Task.CompletedTask;
+    }
+
+    private static string LoadSql(string resourceName)
+    {
+        // Get the assembly containing the embedded SQL files
+        var assembly = Assembly.Load("DotPrompt.Sql"); // Name of the referenced assembly
+
+        // Find the full resource name (includes namespace path)
+        string? fullResourceName = assembly.GetManifestResourceNames()
+            .FirstOrDefault(name => name.EndsWith(resourceName, StringComparison.OrdinalIgnoreCase));
+
+        if (fullResourceName == null)
+        {
+            throw new FileNotFoundException($"Resource {resourceName} not found in assembly {assembly.FullName}");
+        }
+
+        // Read the embedded resource stream
+        using var stream = assembly.GetManifestResourceStream(fullResourceName);
+        using var reader = new StreamReader(stream);
+        return reader.ReadToEnd();
+    }
+    private async Task InitializeDatabase()
+    {
+        string tables = LoadSql("CreateDefaultPromptTables.sql");
+        await _connection.ExecuteAsync(tables);
+
+        string procs = LoadSql("AddSqlPrompt.sql");
+        await _connection.ExecuteAsync(procs);
     }
 
     [Fact]
-    public void FromPromptFile_ValidYaml_ReturnsSqlPromptEntity()
+    public async Task AddSqlPrompt_ValidPrompt_InsertsSuccessfully()
     {
         // Arrange
-        string filePath = "test_prompt.yaml";
-        string yamlContent = @"
-model: gpt-4
-config:
-  name: TestPrompt
-  outputFormat: json
-  maxTokens: 200
-  input:
-    parameters:
-      param1: value1
-      param2: value2
-    default:
-      param1: default1
-      param2: default2
-prompts:
-  system: System message
-  user: User message";
-        
-        CreateTestYamlFile(filePath, yamlContent);
+        var entity = new SqlPromptEntity
+        {
+            PromptName = "myprompt",
+            Model = "gpt4",
+            OutputFormat = "json",
+            MaxTokens = 500,
+            SystemPrompt = "Optimize SQL queries.",
+            UserPrompt = "Suggest indexing improvements.",
+            Parameters = new Dictionary<string, string>
+            {
+                { "Temperature", "0.7" },
+                { "TopP", "0.9" }
+            },
+            Default = new Dictionary<string, object>
+            {
+                { "Temperature", "0.5" }
+            }
+        };
 
         // Act
-        var result = SqlPromptEntity.FromPromptFile(filePath);
+        bool result = await _repository.AddSqlPrompt(entity);
 
         // Assert
-        Assert.NotNull(result);
-        Assert.Equal("gpt-4", result.Model);
-        Assert.Equal("TestPrompt", result.PromptName);
-        Assert.Equal("json", result.OutputFormat);
-        Assert.Equal(200, result.MaxTokens);
-        Assert.Equal("System message", result.SystemPrompt);
-        Assert.Equal("User message", result.UserPrompt);
-        Assert.Equal("value1", result.Parameters["param1"]);
-        Assert.Equal("default1", result.Default["param1"]);
+        Assert.True(result, "Expected new prompt version to be inserted.");
     }
 
     [Fact]
-    public void FromPromptFile_FileDoesNotExist_ThrowsFileNotFoundException()
+    public async Task AddSqlPrompt_SamePromptNoChanges_DoesNotInsertNewVersion()
     {
         // Arrange
-        string invalidPath = "non_existent.yaml";
-
-        // Act & Assert
-        var exception = Assert.Throws<FileNotFoundException>(() => SqlPromptEntity.FromPromptFile(invalidPath));
-        Assert.Contains("The specified file was not found", exception.Message);
-    }
-
-    [Fact]
-    public void FromPromptFile_MissingMandatoryFields_ThrowsException()
-    {
-        // Arrange
-        string filePath = "test_missing_optional.yaml";
-        string yamlContent = @"
-config:
-  name: TestPrompt
-  outputFormat: json
-  maxTokens: 100
-prompts:
-  system: Default system prompt
-  user: Default user prompt";
-
-        CreateTestYamlFile(filePath, yamlContent);
-
-        // Act & Assert
-        Assert.Throws<ApplicationException>(() => SqlPromptEntity.FromPromptFile(filePath));
-    }
-
-    [Fact]
-    public void FromPromptFile_InvalidDataType_ThrowsException()
-    {
-        // Arrange
-        string filePath = "test_invalid_type.yaml";
-        string yamlContent = @"
-model: gpt-4
-config:
-  name: TestPrompt
-  outputFormat: json
-  maxTokens: not_a_number
-prompts:
-  system: System prompt
-  user: User prompt";
-
-        CreateTestYamlFile(filePath, yamlContent);
-
-        // Act & Assert
-        Assert.Throws<FormatException>(() => SqlPromptEntity.FromPromptFile(filePath));
-    }
-
-    // Cleanup method called after each test
-    public void Dispose()
-    {
-        foreach (var file in _testFiles)
+        var entity = new SqlPromptEntity
         {
-            if (File.Exists(file))
+            PromptName = "myprompt",
+            Model = "gpt4",
+            OutputFormat = "json",
+            MaxTokens = 200,
+            SystemPrompt = "Optimize SQL queries.",
+            UserPrompt = "Suggest indexing improvements.",
+            Parameters = new Dictionary<string, string>
             {
-                File.Delete(file);
+                { "Temperature", "0.7" },
+                { "TopP", "0.9" }
+            },
+            Default = new Dictionary<string, object>
+            {
+                { "Temperature", "0.5" }
             }
-        }
+        };
+
+        await _repository.AddSqlPrompt(entity); // First insert
+
+        // Act
+        bool result = await _repository.AddSqlPrompt(entity); // Try inserting again with no changes
+
+        // Assert
+        Assert.False(result, "No new version should be inserted when nothing has changed.");
+    }
+
+    [Fact]
+    public async Task AddSqlPrompt_WhenMaxTokensChanges_ShouldInsertNewVersion()
+    {
+        // Arrange
+        var entity1 = new SqlPromptEntity
+        {
+            PromptName = "noprompt",
+            Model = "gpt4",
+            OutputFormat = "json",
+            MaxTokens = 500,
+            SystemPrompt = "Optimize SQL queries.",
+            UserPrompt = "Suggest indexing improvements.",
+            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
+            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+        };
+
+        var entity2 = new SqlPromptEntity
+        {
+            PromptName = "noprompt", // Same prompt name
+            Model = "gpt4",
+            OutputFormat = "json",
+            MaxTokens = 512, // Changed value
+            SystemPrompt = "Optimize SQL queries.",
+            UserPrompt = "Suggest indexing improvements.",
+            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
+            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+        };
+
+        await _repository.AddSqlPrompt(entity1); // Insert first version
+
+        // Act
+        bool result = await _repository.AddSqlPrompt(entity2);
+
+        // Assert
+        Assert.True(result, "A new version should be inserted when MaxTokens changes.");
     }
 }

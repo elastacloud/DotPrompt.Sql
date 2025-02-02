@@ -25,6 +25,7 @@ public class DatabaseConnector
             var connection = new SqlConnection(connectionString);
             await connection.OpenAsync();
             await CreatePromptTables(connection);
+            await CreateStoredProcs(connection);
             Console.WriteLine("Connected to the database successfully!");
             return connection;
         }
@@ -38,6 +39,14 @@ public class DatabaseConnector
     {
         // 1. Does the prompt table exist already
         string? sqlCreate = DatabaseConfigReader.LoadQuery("CreateDefaultPromptTables.sql");
+        await using SqlCommand command = new SqlCommand(sqlCreate, connection);
+        await command.ExecuteNonQueryAsync();
+    }
+    
+    private async Task CreateStoredProcs(SqlConnection connection)
+    {
+        // 1. Does the prompt table exist already
+        string? sqlCreate = DatabaseConfigReader.LoadQuery("AddSqlPrompt.sql");
         await using SqlCommand command = new SqlCommand(sqlCreate, connection);
         await command.ExecuteNonQueryAsync();
     }
