@@ -169,6 +169,4 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
         // Assert
         Assert.True(result, "A new version should be inserted when MaxTokens changes.");
     }
-
-   
 }
