@@ -1,6 +1,0 @@
-server: "dotprompty.database.windows.net"
-database: "testdotprompt"
-username: "azurecoder"
-password: "M!crosoft123"
-integrated_authentication: false
-aad_authentication: false
