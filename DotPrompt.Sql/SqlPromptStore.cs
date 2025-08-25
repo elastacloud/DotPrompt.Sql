@@ -21,6 +21,16 @@ public class SqlTablePromptStore(string promptFile, IPromptRepository repository
     }
 
     /// <summary>
+    /// Saves the prompt to SQL
+    /// </summary>
+    /// <param name="promptFile">The prompt file</param>
+    /// <param name="name">The name of the file</param>
+    public void Save(PromptFile promptFile, string? name)
+    {
+        throw new NotImplementedException();
+    }
+
+    /// <summary>
     /// Gets a SQL connection given appropriate connection config
     /// </summary>
     private static async Task<IDbConnection> GetSqlClient(string yamlFilePath)
