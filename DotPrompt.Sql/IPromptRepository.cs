@@ -16,4 +16,10 @@ public interface IPromptRepository
     /// </summary>
     /// <returns>An enumeration of prompts with different names</returns>
     IEnumerable<SqlPromptEntity> Load();
+    /// <summary>
+    /// This method will get the latest prompt given the name of the prompt. The exact name will nedd to be used.
+    /// </summary>
+    /// <param name="promptName">The name of the prompt - this is case sensitive.</param>
+    /// <returns>A SqlPromptEntity or null</returns>
+    Task<SqlPromptEntity?> GetLatestPromptByName(string promptName);
 }

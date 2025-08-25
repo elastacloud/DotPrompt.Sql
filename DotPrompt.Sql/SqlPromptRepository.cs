@@ -127,4 +127,10 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
 
         return promptDictionary.Values;
     }
+
+    /// <inheritdoc />
+    public Task<SqlPromptEntity?> GetLatestPromptByName(string promptName)
+    {
+        throw new NotImplementedException();
+    }
 }
