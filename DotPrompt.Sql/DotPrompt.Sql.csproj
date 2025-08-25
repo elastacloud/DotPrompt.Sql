@@ -8,8 +8,8 @@
         <AssemblyName>DotPrompt.Sql</AssemblyName>
         <Description>A SQL store for DotPrompt allowing you to store prompt files in a relational form</Description>
         <Authors>Richard Conway</Authors>
-        <Version>0.2.1</Version>
-        <PackageVersion>0.2.1</PackageVersion>
+        <Version>0.0.5.1</Version>
+        <PackageVersion>0.0.5.1</PackageVersion>
         <Company>Elastacloud</Company>
         <PackageProjectUrl>https://elastacloud.com</PackageProjectUrl>
         <RepositoryUrl>https://github.com/elastacloud/DotPrompt.Sql</RepositoryUrl>
@@ -27,7 +27,7 @@
     
     <ItemGroup>
       <PackageReference Include="Dapper" Version="2.1.35" />
-      <PackageReference Include="DotPrompt" Version="0.2.1" />
+      <PackageReference Include="DotPrompt" Version="0.0.5.1" />
       <PackageReference Include="Microsoft.Data.SqlClient" Version="6.0.1" />
       <PackageReference Include="YamlDotNet" Version="16.3.0" />
     </ItemGroup>
