@@ -27,7 +27,9 @@ public class SqlTablePromptStore(string promptFile, IPromptRepository repository
     /// <param name="name">The name of the file</param>
     public void Save(PromptFile promptFile, string? name)
     {
-        throw new NotImplementedException();
+        var saver = new SqlPromptLoader(repository);
+        var entity = SqlPromptEntity.FromPromptFile(_promptFile);
+        var added = entity != null && saver.AddSqlPrompt(entity).GetAwaiter().GetResult();
     }
 
     /// <summary>
