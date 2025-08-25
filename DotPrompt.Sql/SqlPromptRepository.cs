@@ -137,7 +137,7 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
         string? query = DatabaseConfigReader.LoadQuery("GetLatestPromptByName.sql");
         if (string.IsNullOrEmpty(query))
         {
-            return null;
+            throw new InvalidOperationException("Failed to load SQL query file 'GetLatestPromptByName.sql'. The file could not be found or loaded.");
         }
 
         // Retrieve the prompt row
