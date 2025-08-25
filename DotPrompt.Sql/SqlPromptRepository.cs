@@ -133,64 +133,18 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
     /// <inheritdoc />
     public async Task<SqlPromptEntity?> GetLatestPromptByName(string promptName)
     {
-        // Load the SQL query to fetch the latest prompt by name
         string? query = DatabaseConfigReader.LoadQuery("GetLatestPromptByName.sql");
         if (string.IsNullOrEmpty(query))
         {
             throw new InvalidOperationException(
                 "Failed to load SQL query file 'GetLatestPromptByName.sql'. The file could not be found or loaded.");
         }
-
-        // Retrieve the prompt row
+        
         var prompt = await _connection.QueryFirstOrDefaultAsync<SqlPromptEntity>(
             query,
             new { PromptName = promptName }
         );
 
-        if (prompt == null)
-        {
-            return null;
-        }
-
-        // Query to fetch parameters and defaults for the latest version of this prompt
-        const string parameterQuery = @"
-            WITH LatestVersion AS (
-                SELECT MAX(VersionNumber) AS VersionNumber
-                FROM PromptParameters
-                WHERE PromptId = @PromptId
-            )
-            SELECT pp.ParameterName, pp.ParameterValue, pd.DefaultValue
-            FROM PromptParameters pp
-            LEFT JOIN ParameterDefaults pd ON pp.ParameterId = pd.ParameterId AND pp.VersionNumber = pd.VersionNumber
-            CROSS JOIN LatestVersion
-            WHERE pp.PromptId = @PromptId
-              AND pp.VersionNumber = LatestVersion.VersionNumber;";
-
-        var parameters = await _connection.QueryAsync<PromptParameter>(
-            parameterQuery,
-            new { PromptId = prompt.PromptId }
-        );
-
-        prompt.Parameters = new Dictionary<string, string>();
-        prompt.Default = new Dictionary<string, object>();
-
-        foreach (var param in parameters)
-        {
-            if (string.IsNullOrEmpty(param.ParameterName)) return prompt;
-            if (!prompt.Parameters.ContainsKey(param.ParameterName))
-            {
-                prompt.Parameters.Add(param.ParameterName, param.ParameterValue);
-            }
-
-            if (param.DefaultValue == null || prompt.Default.ContainsKey(param.ParameterName)) return prompt;
-            prompt.Parameters.TryAdd(param.ParameterName, param.ParameterValue);
-
-            if (param.DefaultValue != null)
-            {
-                prompt.Default.TryAdd(param.ParameterName, param.DefaultValue);
-            }
-        }
-
-        return prompt;
+        return prompt ?? null;
     }
 }
