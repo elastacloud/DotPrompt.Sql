@@ -156,7 +156,18 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
 FROM PromptParameters pp
 LEFT JOIN ParameterDefaults pd ON pp.ParameterId = pd.ParameterId AND pp.VersionNumber = pd.VersionNumber
 WHERE pp.PromptId = @PromptId
-  AND pp.VersionNumber = (SELECT MAX(VersionNumber) FROM PromptParameters WHERE PromptId = @PromptId);";
+        const string parameterQuery = @"
+WITH LatestVersion AS (
+    SELECT MAX(VersionNumber) AS VersionNumber
+    FROM PromptParameters
+    WHERE PromptId = @PromptId
+)
+SELECT pp.ParameterName, pp.ParameterValue, pd.DefaultValue
+FROM PromptParameters pp
+LEFT JOIN ParameterDefaults pd ON pp.ParameterId = pd.ParameterId AND pp.VersionNumber = pd.VersionNumber
+CROSS JOIN LatestVersion
+WHERE pp.PromptId = @PromptId
+  AND pp.VersionNumber = LatestVersion.VersionNumber;";
 
         var parameters = await _connection.QueryAsync<PromptParameter>(
             parameterQuery,
