@@ -131,8 +131,57 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
     }
 
     /// <inheritdoc />
-    public Task<SqlPromptEntity?> GetLatestPromptByName(string promptName)
+    public async Task<SqlPromptEntity?> GetLatestPromptByName(string promptName)
     {
-        throw new NotImplementedException();
+        // Load the SQL query to fetch the latest prompt by name
+        string? query = DatabaseConfigReader.LoadQuery("GetLatestPromptByName.sql");
+        if (string.IsNullOrEmpty(query))
+        {
+            return null;
+        }
+
+        // Retrieve the prompt row
+        var prompt = await _connection.QueryFirstOrDefaultAsync<SqlPromptEntity>(
+            query,
+            new { PromptName = promptName }
+        );
+
+        if (prompt == null)
+        {
+            return null;
+        }
+
+        // Query to fetch parameters and defaults for the latest version of this prompt
+        const string parameterQuery = @"SELECT pp.ParameterName, pp.ParameterValue, pd.DefaultValue
+FROM PromptParameters pp
+LEFT JOIN ParameterDefaults pd ON pp.ParameterId = pd.ParameterId AND pp.VersionNumber = pd.VersionNumber
+WHERE pp.PromptId = @PromptId
+  AND pp.VersionNumber = (SELECT MAX(VersionNumber) FROM PromptParameters WHERE PromptId = @PromptId);";
+
+        var parameters = await _connection.QueryAsync<PromptParameter>(
+            parameterQuery,
+            new { PromptId = prompt.PromptId }
+        );
+
+        prompt.Parameters = new Dictionary<string, string>();
+        prompt.Default = new Dictionary<string, object>();
+
+        foreach (var param in parameters)
+        {
+            if (!string.IsNullOrEmpty(param.ParameterName))
+            {
+                if (!prompt.Parameters.ContainsKey(param.ParameterName))
+                {
+                    prompt.Parameters.Add(param.ParameterName, param.ParameterValue);
+                }
+
+                if (param.DefaultValue != null && !prompt.Default.ContainsKey(param.ParameterName))
+                {
+                    prompt.Default.Add(param.ParameterName, param.DefaultValue);
+                }
+            }
+        }
+
+        return prompt;
     }
 }
