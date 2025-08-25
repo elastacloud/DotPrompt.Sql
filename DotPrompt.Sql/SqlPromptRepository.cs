@@ -96,33 +96,35 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
 
         if (query != null)
         {
-            var result = _connection.Query<SqlPromptEntity, PromptParameter, SqlPromptEntity>(
-                query,
-                (prompt, param) =>
-                {
-                    if (!promptDictionary.TryGetValue(prompt.PromptId, out var promptEntity))
+            _connection
+                .Query<SqlPromptEntity, PromptParameter, SqlPromptEntity>(
+                    query,
+                    (prompt, param) =>
                     {
-                        promptEntity = prompt;
-                        promptEntity.Parameters = new Dictionary<string, string>();
-                        promptEntity.Default = new Dictionary<string, object>();
-                        promptDictionary.Add(prompt.PromptId, promptEntity);
-                    }
+                        if (!promptDictionary.TryGetValue(prompt.PromptId, out var promptEntity))
+                        {
+                            promptEntity = prompt;
+                            promptEntity.Parameters = new Dictionary<string, string>();
+                            promptEntity.Default = new Dictionary<string, object>();
+                            promptDictionary.Add(prompt.PromptId, promptEntity);
+                        }
 
-                    if (string.IsNullOrEmpty(param.ParameterName)) return promptEntity;
-                    if (promptEntity.Parameters != null && !promptEntity.Parameters.ContainsKey(param.ParameterName))
-                    {
-                        promptEntity.Parameters.Add(param.ParameterName, param.ParameterValue);
-                    }
+                        if (string.IsNullOrEmpty(param.ParameterName)) return promptEntity;
+                        if (promptEntity.Parameters != null && !promptEntity.Parameters.ContainsKey(param.ParameterName))
+                        {
+                            promptEntity.Parameters.Add(param.ParameterName, param.ParameterValue);
+                        }
 
-                    if (promptEntity.Default == null || promptEntity.Default.ContainsKey(param.ParameterName))
+                        if (promptEntity.Default == null || promptEntity.Default.ContainsKey(param.ParameterName))
+                            return promptEntity;
+                        if (param.DefaultValue != null)
+                            promptEntity.Default.Add(param.ParameterName, param.DefaultValue);
+
                         return promptEntity;
-                    if (param.DefaultValue != null)
-                        promptEntity.Default.Add(param.ParameterName, param.DefaultValue);
-
-                    return promptEntity;
-                },
-                splitOn: "ParameterId"
-            );
+                    },
+                    splitOn: "ParameterId"
+                )
+                .AsList(); // Force enumeration so mapping executes
         }
 
         return promptDictionary.Values;
