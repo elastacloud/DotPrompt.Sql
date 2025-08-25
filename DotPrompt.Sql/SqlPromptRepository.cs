@@ -188,7 +188,11 @@ WHERE pp.PromptId = @PromptId
 
                 if (param.DefaultValue != null && !prompt.Default.ContainsKey(param.ParameterName))
                 {
-                    prompt.Default.Add(param.ParameterName, param.DefaultValue);
+                prompt.Parameters.TryAdd(param.ParameterName, param.ParameterValue);
+
+                if (param.DefaultValue != null)
+                {
+                    prompt.Default.TryAdd(param.ParameterName, param.DefaultValue);
                 }
             }
         }
