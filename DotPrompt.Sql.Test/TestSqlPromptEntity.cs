@@ -169,4 +169,45 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
         // Assert
         Assert.True(result, "A new version should be inserted when MaxTokens changes.");
     }
+    
+    [Fact]
+    public async Task GetSqlPromptByName_GivenTwoPromptsOfTheSameNameAreAdded_ShouldRetrieveLatest()
+    {
+        // Arrange
+        var entity1 = new SqlPromptEntity
+        {
+            PromptName = "noprompt",
+            Model = "gpt4",
+            OutputFormat = "json",
+            MaxTokens = 500,
+            SystemPrompt = "Optimize SQL queries.",
+            UserPrompt = "Suggest indexing improvements.",
+            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
+            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+        };
+
+        var entity2 = new SqlPromptEntity
+        {
+            PromptName = "noprompt", // Same prompt name
+            Model = "gpt4",
+            OutputFormat = "json",
+            MaxTokens = 512, // Changed value
+            SystemPrompt = "Optimize SQL queries 2.", // changed value
+            UserPrompt = "Suggest indexing improvements.",
+            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
+            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+        };
+
+        await _repository.AddSqlPrompt(entity1); // Insert first version
+
+        // Act
+        bool result = await _repository.AddSqlPrompt(entity2);
+        
+        var prompt = await _repository.GetLatestPromptByName("noprompt");
+
+        // Assert
+        Assert.Equal(entity2.MaxTokens, prompt.MaxTokens);
+        Assert.Equal(entity2.SystemPrompt, prompt.SystemPrompt);
+        Assert.Equal(entity1.UserPrompt, prompt.UserPrompt);
+    }
 }
