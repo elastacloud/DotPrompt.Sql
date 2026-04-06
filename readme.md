@@ -4,6 +4,11 @@ A SQL store for the [DotPrompt](https://github.com/elastacloud/dotprompt) librar
 
 A CLI is provided to add prompt files directly to the database.
 
+## Requirements
+
+- .NET 10
+- SQL Server, Azure SQL DB, or Microsoft Fabric SQL DB
+
 ## Installation
 
 ```
