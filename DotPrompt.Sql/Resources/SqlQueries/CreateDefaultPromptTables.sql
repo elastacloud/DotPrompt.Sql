@@ -9,9 +9,12 @@ CREATE TABLE PromptFile (
     ModifiedAt DATETIMEOFFSET NULL,
     Model VARCHAR(255) NULL,
     OutputFormat VARCHAR(255) NOT NULL DEFAULT '',
-    MaxTokens INT NOT NULL,
+    OutputSchema NVARCHAR(MAX) NULL,
+    MaxTokens INT NULL,
+    Temperature FLOAT NULL,
     SystemPrompt NVARCHAR(MAX) NOT NULL DEFAULT '',
     UserPrompt NVARCHAR(MAX) NOT NULL DEFAULT '',
+    FewShots NVARCHAR(MAX) NULL,
     CONSTRAINT UQ_PromptName_Version UNIQUE (PromptName, VersionNumber)
 );
 END;
@@ -25,6 +28,33 @@ IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.TABLE_CONSTRAINTS WHERE TABLE_NA
 BEGIN
 ALTER TABLE PromptFile ADD CONSTRAINT UQ_PromptName_Version UNIQUE (PromptName, VersionNumber);
 END;
+END;
+
+-- Add OutputSchema column to PromptFile (if not exists)
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'PromptFile' AND COLUMN_NAME = 'OutputSchema')
+BEGIN
+ALTER TABLE PromptFile ADD OutputSchema NVARCHAR(MAX) NULL;
+END;
+
+-- Make MaxTokens nullable (if currently NOT NULL)
+IF EXISTS (
+    SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS
+    WHERE TABLE_NAME = 'PromptFile' AND COLUMN_NAME = 'MaxTokens' AND IS_NULLABLE = 'NO'
+)
+BEGIN
+ALTER TABLE PromptFile ALTER COLUMN MaxTokens INT NULL;
+END;
+
+-- Add Temperature column to PromptFile (if not exists)
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'PromptFile' AND COLUMN_NAME = 'Temperature')
+BEGIN
+ALTER TABLE PromptFile ADD Temperature FLOAT NULL;
+END;
+
+-- Add FewShots column to PromptFile (if not exists)
+IF NOT EXISTS (SELECT 1 FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME = 'PromptFile' AND COLUMN_NAME = 'FewShots')
+BEGIN
+ALTER TABLE PromptFile ADD FewShots NVARCHAR(MAX) NULL;
 END;
 
 -- Create the PromptParameters table if it doesn't exist

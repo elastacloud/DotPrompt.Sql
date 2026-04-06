@@ -7,9 +7,12 @@ WITH LatestPrompts AS (
         ModifiedAt,
         Model,
         OutputFormat,
+        OutputSchema,
         MaxTokens,
+        Temperature,
         SystemPrompt,
         UserPrompt,
+        FewShots,
         ROW_NUMBER() OVER (PARTITION BY PromptName ORDER BY VersionNumber DESC) AS RowNum
     FROM PromptFile
 )
@@ -21,8 +24,11 @@ SELECT
     lp.ModifiedAt,
     lp.Model,
     lp.OutputFormat,
+    lp.OutputSchema,
     lp.MaxTokens,
+    lp.Temperature,
     lp.SystemPrompt,
-    lp.UserPrompt
+    lp.UserPrompt,
+    lp.FewShots
 FROM LatestPrompts lp
 WHERE lp.PromptName = @PromptName AND lp.RowNum = 1;

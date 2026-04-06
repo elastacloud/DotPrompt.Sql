@@ -6,10 +6,8 @@ namespace DotPrompt.Sql;
 /// <summary>
 /// Implementation of the IPromptStore for any SQL Server database
 /// </summary>
-public class SqlTablePromptStore(string promptFile, IPromptRepository repository) : IPromptStore
+public class SqlTablePromptStore(IPromptRepository repository) : IPromptStore
 {
-    private readonly string _promptFile = promptFile;
-
     /// <summary>
     /// Loads the prompts from SQL
     /// </summary>
@@ -28,8 +26,8 @@ public class SqlTablePromptStore(string promptFile, IPromptRepository repository
     public void Save(PromptFile promptFile, string? name)
     {
         var saver = new SqlPromptLoader(repository);
-        var entity = SqlPromptEntity.FromPromptFile(_promptFile);
-        var added = entity != null && saver.AddSqlPrompt(entity).GetAwaiter().GetResult();
+        var entity = SqlPromptEntity.FromPromptFile(promptFile);
+        saver.AddSqlPrompt(entity).GetAwaiter().GetResult();
     }
 
     /// <summary>
