@@ -81,16 +81,17 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
             Model = "gpt4",
             OutputFormat = "json",
             MaxTokens = 500,
+            Temperature = 0.7f,
             SystemPrompt = "Optimize SQL queries.",
             UserPrompt = "Suggest indexing improvements.",
             Parameters = new Dictionary<string, string>
             {
-                { "Temperature", "0.7" },
-                { "TopP", "0.9" }
+                { "query", "string" },
+                { "topP", "number" }
             },
             Default = new Dictionary<string, object>
             {
-                { "Temperature", "0.5" }
+                { "topP", "0.9" }
             }
         };
 
@@ -111,16 +112,17 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
             Model = "gpt4",
             OutputFormat = "json",
             MaxTokens = 200,
+            Temperature = 0.5f,
             SystemPrompt = "Optimize SQL queries.",
             UserPrompt = "Suggest indexing improvements.",
             Parameters = new Dictionary<string, string>
             {
-                { "Temperature", "0.7" },
-                { "TopP", "0.9" }
+                { "query", "string" },
+                { "topP", "number" }
             },
             Default = new Dictionary<string, object>
             {
-                { "Temperature", "0.5" }
+                { "topP", "0.9" }
             }
         };
 
@@ -145,8 +147,8 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
             MaxTokens = 500,
             SystemPrompt = "Optimize SQL queries.",
             UserPrompt = "Suggest indexing improvements.",
-            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
-            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+            Parameters = new Dictionary<string, string> { { "query", "string" } },
+            Default = new Dictionary<string, object> { { "query", "SELECT 1" } }
         };
 
         var entity2 = new SqlPromptEntity
@@ -157,8 +159,8 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
             MaxTokens = 512, // Changed value
             SystemPrompt = "Optimize SQL queries.",
             UserPrompt = "Suggest indexing improvements.",
-            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
-            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+            Parameters = new Dictionary<string, string> { { "query", "string" } },
+            Default = new Dictionary<string, object> { { "query", "SELECT 1" } }
         };
 
         await _repository.AddSqlPrompt(entity1); // Insert first version
@@ -182,8 +184,8 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
             MaxTokens = 500,
             SystemPrompt = "Optimize SQL queries.",
             UserPrompt = "Suggest indexing improvements.",
-            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
-            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+            Parameters = new Dictionary<string, string> { { "query", "string" } },
+            Default = new Dictionary<string, object> { { "query", "SELECT 1" } }
         };
 
         var entity2 = new SqlPromptEntity
@@ -194,8 +196,8 @@ public class SqlPromptRepositoryTests : IAsyncLifetime
             MaxTokens = 512, // Changed value
             SystemPrompt = "Optimize SQL queries 2.", // changed value
             UserPrompt = "Suggest indexing improvements.",
-            Parameters = new Dictionary<string, string> { { "Temperature", "0.7" } },
-            Default = new Dictionary<string, object> { { "Temperature", "0.5" } }
+            Parameters = new Dictionary<string, string> { { "query", "string" } },
+            Default = new Dictionary<string, object> { { "query", "SELECT 1" } }
         };
 
         await _repository.AddSqlPrompt(entity1); // Insert first version

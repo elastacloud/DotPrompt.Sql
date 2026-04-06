@@ -57,9 +57,12 @@ public class SqlPromptRepository(IDbConnection connection) : IPromptRepository
             parameters.Add("PromptName", entity.PromptName);
             parameters.Add("Model", entity.Model);
             parameters.Add("OutputFormat", entity.OutputFormat);
+            parameters.Add("OutputSchema", entity.OutputSchema);
             parameters.Add("MaxTokens", entity.MaxTokens);
+            parameters.Add("Temperature", entity.Temperature);
             parameters.Add("SystemPrompt", entity.SystemPrompt);
             parameters.Add("UserPrompt", entity.UserPrompt);
+            parameters.Add("FewShots", entity.FewShots);
             parameters.Add("Parameters", parametersTable.AsTableValuedParameter("PromptParameterType"));
             parameters.Add("Defaults", defaultsTable.AsTableValuedParameter("ParameterDefaultType"));
             parameters.Add("IsNewVersion", dbType: DbType.Boolean, direction: ParameterDirection.Output);

@@ -2,9 +2,12 @@ CREATE OR ALTER PROCEDURE sp_AddSqlPrompt
     @PromptName VARCHAR(255),
     @Model VARCHAR(255),
     @OutputFormat VARCHAR(255),
+    @OutputSchema NVARCHAR(MAX),
     @MaxTokens INT,
+    @Temperature FLOAT,
     @SystemPrompt NVARCHAR(MAX),
     @UserPrompt NVARCHAR(MAX),
+    @FewShots NVARCHAR(MAX),
     @Parameters PromptParameterType READONLY, -- Table-Valued Parameter
     @Defaults ParameterDefaultType READONLY, -- Table-Valued Parameter
     @IsNewVersion BIT OUTPUT -- New Output Parameter
@@ -34,9 +37,12 @@ SET @NewVersion = ISNULL(@ExistingVersion, 0) + 1;
         WHERE PromptId = @ExistingPromptId
         AND Model = @Model
         AND OutputFormat = @OutputFormat
-        AND MaxTokens = @MaxTokens
+        AND (OutputSchema = @OutputSchema OR (OutputSchema IS NULL AND @OutputSchema IS NULL))
+        AND (MaxTokens = @MaxTokens OR (MaxTokens IS NULL AND @MaxTokens IS NULL))
+        AND (Temperature = @Temperature OR (Temperature IS NULL AND @Temperature IS NULL))
         AND SystemPrompt = @SystemPrompt
         AND UserPrompt = @UserPrompt
+        AND (FewShots = @FewShots OR (FewShots IS NULL AND @FewShots IS NULL))
     )
     OR EXISTS (
         -- Parameters changed?
@@ -64,8 +70,8 @@ SET @NewVersion = ISNULL(@ExistingVersion, 0) + 1;
     )
 BEGIN
         -- Insert new version of the prompt
-INSERT INTO PromptFile (PromptName, VersionNumber, CreatedAt, ModifiedAt, Model, OutputFormat, MaxTokens, SystemPrompt, UserPrompt)
-VALUES (@PromptName, @NewVersion, GETUTCDATE(), GETUTCDATE(), @Model, @OutputFormat, @MaxTokens, @SystemPrompt, @UserPrompt);
+INSERT INTO PromptFile (PromptName, VersionNumber, CreatedAt, ModifiedAt, Model, OutputFormat, OutputSchema, MaxTokens, Temperature, SystemPrompt, UserPrompt, FewShots)
+VALUES (@PromptName, @NewVersion, GETUTCDATE(), GETUTCDATE(), @Model, @OutputFormat, @OutputSchema, @MaxTokens, @Temperature, @SystemPrompt, @UserPrompt, @FewShots);
 
 SET @NewPromptId = SCOPE_IDENTITY();
 
